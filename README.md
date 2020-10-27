@@ -11,7 +11,7 @@ Normally, when sorting by redis sorted set, members with the same score are rank
 
 The ranking can be displayed immediately after adding the score. So there is no need to set up a queuing system or batch for ranking.
 
-<img width="100%" alt="esrank_rule" src="https://user-images.githubusercontent.com/301822/97260068-8955e680-185f-11eb-87ac-2e095ca898c3.png">
+<img width="100%" alt="esrank_rule" src="https://user-images.githubusercontent.com/301822/97300850-51b86000-189a-11eb-9965-a84fac71d6b4.png">
 
 ## Performance
 
