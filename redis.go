@@ -102,6 +102,40 @@ func (r *Ranking) AddRankingScore(ctx context.Context, uid uint32, score float64
 	return nil
 }
 
+// RankingList ranking list of uid a score sets
+func (r *Ranking) RankingList(ctx context.Context, start, end int64) ([]map[uint32]float64, error) {
+	res, err := r.client.ZRevRangeWithScores(ctx,r.rankingListName(), start, end ).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	list := make([]map[uint32]float64, 0, len(res))
+
+	for _, re := range res {
+		list = append(list, map[uint32]float64{getRankingUID(re.Member.(string)): re.Score})
+	}
+	return list, err
+}
+
+// GetRanking get personal rank and score
+func (r *Ranking) GetRanking(ctx context.Context, uid uint32) (int64, float64, error) {
+	key, err := r.getRankingKey(ctx, uid)
+	if err != nil {
+		return 0, float64(0), err
+	}
+	if key == "" {
+		return 0, float64(0), nil
+	}
+
+	rank, err := r.client.ZRevRank(ctx, r.rankingListName(), key).Result()
+	if err != nil {
+		return 0, float64(0), err
+	}
+
+	score, err := r.client.ZScore(ctx, r.rankingListName(), key).Result()
+	return rank, score, err
+}
+
 func (r *Ranking) getUnixTimeStamp(t time.Time) int64 {
 	switch r.mode {
 	case TimeModeMicroSec:
@@ -129,21 +163,6 @@ func getRankingUID(key string) uint32 {
 	return uint32(keyNum & uidMax)
 }
 
-// RankingList ranking list of uid a score sets
-func (r *Ranking) RankingList(ctx context.Context, start, end int64) ([]map[uint32]float64, error) {
-	res, err := r.client.ZRevRangeWithScores(ctx,r.rankingListName(), start, end ).Result()
-	if err != nil {
-		return nil, err
-	}
-
-	list := make([]map[uint32]float64, 0, len(res))
-
-	for _, re := range res {
-		list = append(list, map[uint32]float64{getRankingUID(re.Member.(string)): re.Score})
-	}
-	return list, err
-}
-
 func (r *Ranking) getRankingKey(ctx context.Context, uid uint32) (string, error) {
 	val, err := r.client.Exists(ctx, r.uidKey(uid)).Result()
 	if err != nil {
@@ -155,25 +174,6 @@ func (r *Ranking) getRankingKey(ctx context.Context, uid uint32) (string, error)
 	}
 
 	return r.client.Get(ctx, r.uidKey(uid)).Result()
-}
-
-// GetRanking get personal rank and score
-func (r *Ranking) GetRanking(ctx context.Context, uid uint32) (int64, float64, error) {
-	key, err := r.getRankingKey(ctx, uid)
-	if err != nil {
-		return 0, float64(0), err
-	}
-	if key == "" {
-		return 0, float64(0), nil
-	}
-
-	rank, err := r.client.ZRevRank(ctx, r.rankingListName(), key).Result()
-	if err != nil {
-		return 0, float64(0), err
-	}
-
-	score, err := r.client.ZScore(ctx, r.rankingListName(), key).Result()
-	return rank, score, err
 }
 
 func (r *Ranking) lockKey(uid interface{}) string {
