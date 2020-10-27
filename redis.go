@@ -136,6 +136,44 @@ func (r *Ranking) GetRanking(ctx context.Context, uid uint32) (int64, float64, e
 	return rank, score, err
 }
 
+// Remove remove personal ranking
+func (r *Ranking) Remove(ctx context.Context, uid uint32) error {
+	key, err := r.getRankingKey(ctx, uid)
+	if err != nil {
+		return err
+	}
+
+	if key == "" {
+		return nil
+	}
+
+	err = r.client.Del(ctx, r.uidKey(uid)).Err()
+	if err != nil {
+		return err
+	}
+
+	return r.client.ZRem(ctx, r.rankingListName(), key).Err()
+}
+
+// RemoveAll remove all rankings
+func (r *Ranking) RemoveAll(ctx context.Context) error {
+	name := r.rankingListName()
+	v, err := r.client.Exists(ctx, name).Result()
+	if err != nil || v == 0 {
+		return err
+	}
+	if err = r.client.Del(ctx, name).Err(); err != nil {
+		return err
+	}
+
+	keys, err := r.client.Keys(ctx, r.uidKeys()).Result()
+	if err != nil {
+		return err
+	}
+
+	return r.client.Del(ctx, keys...).Err()
+}
+
 func (r *Ranking) getUnixTimeStamp(t time.Time) int64 {
 	switch r.mode {
 	case TimeModeMicroSec:
@@ -182,6 +220,10 @@ func (r *Ranking) lockKey(uid interface{}) string {
 
 func (r *Ranking) uidKey(uid interface{}) string {
 	return fmt.Sprintf("esrank_%s_uid_%v", r.name, uid)
+}
+
+func (r *Ranking) uidKeys() string {
+	return fmt.Sprintf("esrank_%s_uid_*", r.name)
 }
 
 func (r *Ranking) rankingListName() string {

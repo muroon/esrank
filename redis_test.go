@@ -14,7 +14,7 @@ import (
 
 var client *goredislib.Client
 
-func newClientForTest(ctx context.Context) (*Ranking, error) {
+func connectRedisClient(ctx context.Context) error {
 	if client == nil {
 		client = goredislib.NewClient(&goredislib.Options{
 			Addr:     "localhost:6379",
@@ -24,10 +24,17 @@ func newClientForTest(ctx context.Context) (*Ranking, error) {
 
 		_, err := client.Ping(ctx).Result()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
+	return nil
+}
+
+func newClientForTest(ctx context.Context) (*Ranking, error) {
+	if err := connectRedisClient(ctx); err != nil {
+		return nil, err
+	}
 	rank := NewRanking(client)
 	return rank, nil
 }
@@ -300,5 +307,134 @@ func TestAddRankingScoreMulti(t *testing.T) {
 				t.Errorf("AddRankingScore() score: %v, correct score: %v", sc, tt.want)
 			}
 		})
+	}
+}
+
+func TestRanking_Remove(t *testing.T) {
+	ctx := context.Background()
+
+	rank, err := newClientForTest(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := flushAllForTest(ctx); err != nil {
+		t.Error(err)
+	}
+
+	targetUID := uint32(3)
+
+	type args struct {
+		uid   uint32
+		score float64
+		rank int64
+	}
+	argList := []args{
+		args{
+			uid: 1,
+			score: 10,
+		},
+		args{
+			uid: 2,
+			score: 20,
+		},
+		args{
+			uid: 3,
+			score: 30,
+		},
+		args{
+			uid: 4,
+			score: 40,
+		},
+		args{
+			uid: 5,
+			score: 50,
+		},
+	}
+	for _, a := range argList {
+		if err := rank.AddRankingScore(ctx, a.uid, a.score); err != nil {
+			t.Error(err)
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	if err = rank.Remove(ctx, targetUID); err != nil {
+		t.Error(err)
+	}
+
+	rankingList, err := rank.RankingList(ctx, 0, int64(len(argList)))
+	if err != nil {
+		t.Error(err)
+	}
+
+	for i, ranking := range rankingList {
+		if score, ok := ranking[targetUID]; ok {
+			t.Errorf("Remove error. rank:%d, uid:%d, score:%v", i, targetUID, score)
+		}
+	}
+}
+
+func TestRanking_RemoveAll(t *testing.T) {
+	ctx := context.Background()
+	if err := connectRedisClient(ctx); err != nil {
+		t.Error(err)
+	}
+
+	if err := flushAllForTest(ctx); err != nil {
+		t.Error(err)
+	}
+
+	rankingName := "removeRank"
+
+	rank := NewRanking(client, Name(rankingName))
+
+	if err := rank.RemoveAll(ctx); err != nil {
+		t.Error(err)
+	}
+
+	uids := []uint32{1, 2}
+	score := float64(100)
+	for _, uid := range uids {
+		if err := rank.AddRankingScore(ctx, uid, score); err != nil {
+			t.Error(err)
+		}
+	}
+
+	v, err := client.Exists(ctx, rank.rankingListName()).Result()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if v == 0 {
+		t.Errorf("targetRanking is none. %v", rank.rankingListName())
+	}
+
+	keys, err := client.Keys(ctx, rank.uidKeys()).Result()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(keys) != len(uids) {
+		t.Errorf("invalid data. keys:%#+v", keys)
+	}
+
+	if err := rank.RemoveAll(ctx); err != nil {
+		t.Error(err)
+	}
+
+	v, err = client.Exists(ctx, rank.rankingListName()).Result()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if v != 0 {
+		t.Errorf("targetRanking exists. %v", rank.rankingListName())
+	}
+
+	keys, err = client.Keys(ctx, rank.uidKeys()).Result()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(keys) > 0 {
+		t.Errorf("invalid data after RemoveAll. keys:%#+v", keys)
 	}
 }
