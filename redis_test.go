@@ -3,6 +3,7 @@ package esrank
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -15,9 +16,19 @@ import (
 var client *goredislib.Client
 
 func connectRedisClient(ctx context.Context) error {
+	host := os.Getenv("REDIS_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
+	port := os.Getenv("REDIS_PORT")
+	if port == "" {
+		port = "6379"
+	}
+
 	if client == nil {
 		client = goredislib.NewClient(&goredislib.Options{
-			Addr:     "localhost:6379",
+			Addr:     fmt.Sprintf("%s:%s", host, port),
 			Password: "", // no password set
 			DB:       0,  // use default DB
 		})

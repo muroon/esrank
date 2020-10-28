@@ -1,0 +1,35 @@
+name: test
+on: [pull_request, push]
+jobs:
+  test:
+    # コンテナはLinuxベースのオペレーティングシステム内で実行しなければならない
+    runs-on: ubuntu-latest
+    # `container-job`が実行されるDocker Hubのイメージ
+    container: golang:1.14
+
+    # `container-job`と実行されるサービスコンテナ
+    services:
+      # サービスコンテナへのアクセスに使われるラベル
+      redis:
+        # Docker Hubのイメージ
+        image: redis
+        # redisが起動するまで待つヘルスチェックの設定
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      ## checks out our code locally so we can work with the files
+      - name: checkout code
+        uses: actions/checkout@v2
+    
+      ## runs go test ./...
+      - name: test
+        run: go test -v ./...
+        env:
+          # The hostname used to communicate with the Redis service container
+          REDIS_HOST: redis
+          # The default Redis port
+          REDIS_PORT: 6379
