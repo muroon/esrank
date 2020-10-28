@@ -12,15 +12,26 @@ import (
 	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
 )
 
+// TimeLayout time layout
 const TimeLayout string = "2006-01-01"
+
+// StartTimeDefault default start time
 const StartTimeDefault string = "2020-01-01"
+
+// RankingListNameSuffix the suffix of ranking list name
 const RankingListNameSuffix string = "ranking"
+
+// RankingNameDefault default ranking name
 const RankingNameDefault string = "myRanking"
 
+// TimeMode mode of time
 type TimeMode int
 const (
+	// TimeModeMicroSec time mode of micro sec
 	TimeModeMicroSec TimeMode = 0
+	// TimeModeMilliSec time mode of milli sec
 	TimeModeMilliSec TimeMode = 1
+	// TimeModeSec time mode of sec
 	TimeModeSec TimeMode = 2
 )
 

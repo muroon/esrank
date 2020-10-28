@@ -156,7 +156,6 @@ func TestAddRankingScore(t *testing.T) {
 	type args struct {
 		uid   uint32
 		score float64
-		rank int64
 	}
 	tests := []struct {
 		name    string
@@ -338,7 +337,6 @@ func TestRanking_Remove(t *testing.T) {
 	type args struct {
 		uid   uint32
 		score float64
-		rank int64
 	}
 	argList := []args{
 		args{
