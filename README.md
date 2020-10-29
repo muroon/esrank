@@ -74,6 +74,10 @@ import(
 	rank, score, err := rank.GetRanking(ctx, userID)
 ```
 
+### Examples
+
+[Examples](https://github.com/muroon/esrank/tree/master/examples)
+
 ## Limitations
 
 1. uid (member's id) is uint32 type
