@@ -13,6 +13,8 @@ The ranking can be displayed immediately after adding the score. So there is no 
 
 <img width="100%" alt="esrank_rule" src="https://user-images.githubusercontent.com/301822/97300850-51b86000-189a-11eb-9965-a84fac71d6b4.png">
 
+See [here](https://github.com/muroon/esrank/blob/master/doc/redis.md) for a detailed explanation of how esrank uses redis.
+
 ## Performance
 
 Performance comparison when using either esrank or DB with the above specifications. Shows the execution time of [RankingList(Get List)](#get-listget-100-rankings-from-first) and [GetRanking(Get Personal Rank)](#get-personal-rank) respectively.
