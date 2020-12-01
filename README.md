@@ -93,9 +93,9 @@ Similarly, in the case of TimeModeSec, the time difference of 1sec or more is co
 
 |TimeMode|Expiration|
 |---|---|
-|TimeModeMicroSec|136 years|
+|TimeModeSec|136 years|
 |TimeModeMilliSec (Default)|1.36 years|
-|TimeModeSec|4.97 days|
+|TimeModeMicroSec|4.97 days|
 
 ```
 	rank := NewRanking(
